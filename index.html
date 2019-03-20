@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <title>Kafka Properties Documentation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.22/vue.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/axios/0.15.3/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+
+    <style>
+        table {
+            /*table-layout: fixed;*/
+        }
+
+        td {
+            word-break: break-all;
+            word-wrap: break-word;
+            min-width: 10em;
+        }
+
+        #properties .tag {
+            height: initial;
+            padding: initial;
+        }
+    </style>
+</head>
+<body>
+
+
+<section class="hero is-primary">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                Kafka Properties Documentation
+            </h1>
+            <h2 class="subtitle">
+                Human-readable documentation.
+            </h2>
+        </div>
+    </div>
+</section>
+
+<div id="properties" class="container is-fluid">
+    <section class="section">
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Search</label>
+            </div>
+            <div class="field-body">
+                <div class="field is-expanded">
+                    <div class="control">
+                        <input class="input" type="text" v-model="filters.search"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Category</label>
+            </div>
+            <div class="field-body">
+                <div class="buttons has-addons">
+                    <span class="button" v-for="category of filters.categories"
+                          v-bind:class="{ 'is-primary': category.active }"
+                          v-on:click="category.active = !category.active"
+                          v-text="categoryName(category.name)"
+                    />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+            <thead>
+            <tr>
+                <th>Category</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Valid Values</th>
+                <th>Importance</th>
+                <th>Dynamic Update Mode</th>
+                <th>Server Default Property</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="property of filteredProperties">
+                <td v-text="categoryName(property.Category)"/>
+                <td v-html="highlight(property.Name)"/>
+                <td style="word-break: normal" v-html="highlight(property.Description)"/>
+                <td>
+                    <code v-html="highlight(property.Type)"/>
+                </td>
+                <td v-html="highlight(property.Default)"/>
+                <td v-html="highlight(property.ValidValues)"/>
+                <td v-html="highlight(property.Importance)"/>
+                <td v-html="highlight(property.DynamicUpdateMode)"/>
+                <td v-html="highlight(property.ServerDefaultProperty)"/>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>
+            <strong>Kafka Properties Documentation</strong> made with ❤️ by
+            <a href="https://github.com/mouminoux">Moum</a>.
+        </p>
+    </div>
+</footer>
+<script>
+    var propertiesVue = new Vue({
+        el: '#properties',
+        created() {
+            this.fetchData();
+        },
+        data: {
+            properties: [],
+            categoriesName: [
+                {name: 'broker', displayName: "Broker"},
+                {name: 'topic', displayName: "Topic"},
+                {name: 'producer', displayName: "Producer"},
+                {name: 'consumer', displayName: "Consumer"},
+                {name: 'connect', displayName: "Connect"},
+                {name: 'streams', displayName: "Streams"},
+                {name: 'adminclient', displayName: "Admin Client"},
+            ],
+            filters: {
+                search: '',
+                categories: [
+                    {name: 'broker', active: true},
+                    {name: 'topic', active: true},
+                    {name: 'producer', active: true},
+                    {name: 'consumer', active: true},
+                    {name: 'connect', active: true},
+                    {name: 'streams', active: true},
+                    {name: 'adminclient', active: true},
+                ]
+            },
+        },
+        methods: {
+            fetchData() {
+                axios.get('./kafka-doc.json').then(response => {
+                    this.properties = response.data;
+                });
+            },
+            highlight: function (value) {
+                if (this.filters.search.length > 2) {
+                    return value.replace(new RegExp(this.filters.search, "gi"), match => {
+                        return '<span class="tag is-primary is-medium">' + match + '</span>';
+                    });
+                } else {
+                    return value;
+                }
+            },
+            categoryName: function (value) {
+                for (var i = 0; i < this.categoriesName.length; i++) {
+                    if (this.categoriesName[i].name === value) {
+                        return this.categoriesName[i].displayName;
+                    }
+                }
+            },
+        },
+        computed: {
+            filteredProperties: function () {
+                var search = this.filters.search;
+                var properties = this.properties;
+                var categories = this.filters.categories;
+
+                properties = properties.filter(function (row) {
+                    for (var i = 0; i < categories.length; i++) {
+                        if (row['Category'] === categories[i].name && categories[i].active) {
+                            return row;
+                        }
+                    }
+                });
+
+                properties = properties.filter(function (row) {
+                    return Object.keys(row).some(function (key) {
+                        return String(row[key]).toLowerCase().indexOf(search.toLowerCase()) > -1;
+                    });
+                });
+
+                return properties;
+            }
+        },
+    });
+</script>
+</body>
+</html>
