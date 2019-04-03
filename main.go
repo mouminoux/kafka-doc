@@ -25,10 +25,24 @@ type property struct {
 
 func main() {
 
+	kafkaVersion := map[string]string{
+		"0101": "0.10.1.X",
+		"0102": "0.10.2.X",
+		"0110": "0.11.0.X",
+		"10":   "1.0.X",
+		"11":   "1.1.X",
+		"20":   "2.0.X",
+		"21":   "2.1.X",
+	}
+
+	for k, v := range kafkaVersion {
+		getDoc(k, v)
+	}
+}
+
+func getDoc(versionCode string, versionLabel string) {
 	var properties []property
-
 	c := colly.NewCollector()
-
 	c.OnHTML(`#configuration-template`, func(e *colly.HTMLElement) {
 		document, err := goquery.NewDocumentFromReader(strings.NewReader(e.Text))
 		if err != nil {
@@ -95,30 +109,25 @@ func main() {
 		})
 
 	})
-
 	c.OnError(func(response *colly.Response, e error) {
 		if response.StatusCode == 404 {
 			panic(errors.Errorf("Not found"))
 		}
 		panic(errors.Wrapf(e, "colly error (status:%d)", response.StatusCode))
 	})
-
-	err := c.Visit("https://kafka.apache.org/documentation.html")
+	err := c.Visit("https://kafka.apache.org/" + versionCode + "/documentation.html")
 	if err != nil {
 		panic(err)
 	}
-
 	bytes, err := json.Marshal(properties)
 	if err != nil {
 		panic(err)
 	}
-
-	f, err := os.Create("kafka-doc.json")
+	f, err := os.Create("kafka-doc-" + versionLabel + ".json")
 	if err != nil {
 		panic(err)
 	}
 	defer f.Close()
-
 	w := bufio.NewWriter(f)
 	_, err = w.Write(bytes)
 	if err != nil {
