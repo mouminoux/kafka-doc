@@ -19,6 +19,14 @@
             min-width: 10em;
         }
 
+        .five {
+            width: 5%;
+        }
+
+        .ten {
+            width: 10%;
+        }
+
         #properties .tag {
             height: initial;
             padding: initial;
@@ -87,6 +95,17 @@
 
     <section class="section">
         <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
+            <colgroup>
+                <col class="five"/>
+                <col class="five"/>
+                <col/>
+                <col class="five"/>
+                <col class="five"/>
+                <col class="ten"/>
+                <col class="five"/>
+                <col class="ten"/>
+                <col class="ten"/>
+            </colgroup>
             <thead>
             <tr>
                 <th>Category</th>
@@ -104,7 +123,7 @@
             <tr v-for="property of filteredProperties">
                 <td v-text="categoryName(property.Category)"/>
                 <td v-html="highlight(property.Name)"/>
-                <td style="word-break: normal" v-html="highlight(property.Description)"/>
+                <td style="word-break: break-word" v-html="highlight(property.Description)"/>
                 <td>
                     <code v-html="highlight(property.Type)"/>
                 </td>
