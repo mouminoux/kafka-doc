@@ -59,7 +59,7 @@
                 <div class="buttons has-addons">
                     <span class="button" v-for="version of versions"
                           v-bind:class="{ 'is-primary': filters.version == version }"
-                          v-on:click="filters.version = version; fetchData()"
+                          v-on:click="filters.version = version; updateUrlHash(); fetchData()"
                           v-text="version"
                     />
                 </div>
@@ -72,7 +72,7 @@
             <div class="field-body">
                 <div class="field is-expanded">
                     <div class="control">
-                        <input class="input" type="text" v-model="filters.search"/>
+                        <input class="input" type="text" v-on:input="updateUrlHash()" v-model="filters.search"/>
                     </div>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                 <div class="buttons has-addons">
                     <span class="button" v-for="category of filters.categories"
                           v-bind:class="{ 'is-primary': category.active }"
-                          v-on:click="category.active = !category.active"
+                          v-on:click="category.active = !category.active; updateUrlHash()"
                           v-text="categoryName(category.name)"
                     />
                 </div>
@@ -149,6 +149,7 @@
     var propertiesVue = new Vue({
         el: '#properties',
         created() {
+            this.loadFiltersFromUrlHash();
             this.fetchData();
         },
         data: {
@@ -206,6 +207,16 @@
                         return this.categoriesName[i].displayName;
                     }
                 }
+            },
+            loadFiltersFromUrlHash: function () {
+                let hash = window.location.hash;
+                if (hash === '') {
+                    return;
+                }
+                this.filters = JSON.parse(decodeURI(hash.substr(1)));
+            },
+            updateUrlHash: function () {
+                window.location.hash = JSON.stringify(this.filters);
             },
         },
         computed: {
