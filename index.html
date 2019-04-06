@@ -9,10 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
 
     <style>
-        table {
-            /*table-layout: fixed;*/
-        }
-
         td {
             word-break: break-all;
             word-wrap: break-word;
@@ -59,7 +55,7 @@
                 <div class="buttons has-addons">
                     <span class="button" v-for="version of versions"
                           v-bind:class="{ 'is-primary': filters.version == version }"
-                          v-on:click="filters.version = version; updateUrlHash(); fetchData()"
+                          v-on:click="filters.version = version; fetchData()"
                           v-text="version"
                     />
                 </div>
@@ -72,7 +68,7 @@
             <div class="field-body">
                 <div class="field is-expanded">
                     <div class="control">
-                        <input class="input" type="text" v-on:input="updateUrlHash()" v-model="filters.search"/>
+                        <input class="input" type="text" v-model="filters.search"/>
                     </div>
                 </div>
             </div>
@@ -85,7 +81,7 @@
                 <div class="buttons has-addons">
                     <span class="button" v-for="category of filters.categories"
                           v-bind:class="{ 'is-primary': category.active }"
-                          v-on:click="category.active = !category.active; updateUrlHash()"
+                          v-on:click="category.active = !category.active"
                           v-text="categoryName(category.name)"
                     />
                 </div>
@@ -213,10 +209,11 @@
                 if (hash === '') {
                     return;
                 }
-                this.filters = JSON.parse(decodeURI(hash.substr(1)));
-            },
-            updateUrlHash: function () {
-                window.location.hash = JSON.stringify(this.filters);
+                try {
+                    this.filters = JSON.parse(decodeURIComponent(hash.substr(1)));
+                } catch (error) {
+                    console.error('Impossible to parse location.hash');
+                }
             },
         },
         computed: {
@@ -240,6 +237,14 @@
                 });
 
                 return properties;
+            }
+        },
+        watch: {
+            filters: {
+                handler(filters) {
+                    window.location.hash = encodeURIComponent(JSON.stringify(filters));
+                },
+                deep: true
             }
         },
     });
