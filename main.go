@@ -33,6 +33,7 @@ func main() {
 		"11":   "1.1.X",
 		"20":   "2.0.X",
 		"21":   "2.1.X",
+		"22":   "2.2.X",
 	}
 
 	for k, v := range kafkaVersion {
