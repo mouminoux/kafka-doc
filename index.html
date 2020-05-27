@@ -154,7 +154,7 @@
 <script>
     var propertiesVue = new Vue({
         el: '#properties',
-        created() {
+        mounted() {
             this.loadFiltersFromUrlHash();
             this.fetchData();
         },
@@ -180,9 +180,10 @@
                 '2.2.X',
                 '2.3.X',
                 '2.4.X',
+                '2.5.X',
             ],
             filters: {
-                version: '2.4.X',
+                version: '2.5.X',
                 search: '',
                 categories: [
                     {name: 'broker', active: true},

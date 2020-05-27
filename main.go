@@ -37,12 +37,16 @@ func main() {
 		"22":   "2.2.X",
 		"23":   "2.3.X",
 		"24":   "2.4.X",
+		"25":   "2.5.X",
 	}
 
 	for k, versionLabel := range kafkaVersion {
 		var properties []property
-		if docVersion, _ := strconv.Atoi(k); docVersion < 24 || docVersion > 100 {
+		docVersion, _ := strconv.Atoi(k)
+		if docVersion < 24 || docVersion > 100 {
 			properties = getDocBefore24(k)
+		} else if docVersion < 25 {
+			properties = getDocBefore25(k)
 		} else {
 			properties = getDoc(k)
 		}
@@ -65,6 +69,78 @@ func main() {
 }
 
 func getDoc(versionCode string) []property {
+	var properties []property
+	c := colly.NewCollector()
+
+	c.OnHTML(`#configuration-template`, func(e *colly.HTMLElement) {
+		document, err := goquery.NewDocumentFromReader(strings.NewReader(e.Text))
+		if err != nil {
+			panic(err)
+		}
+
+		var currentCategory string
+
+		document.Find(".config-list > li, h3 > a").Each(func(i int, selection *goquery.Selection) {
+			p := property{}
+
+			if selection.Nodes[0].Data == "a" {
+				categoryLinkAttr, _ := selection.Attr("id")
+				currentCategory = strings.Replace(categoryLinkAttr, "configs", "", 1)
+				return
+			}
+
+			p.Category = currentCategory
+
+			propKey := selection.Find("h4 > a").First()
+			p.Name = propKey.Text()
+
+			html, _ := selection.Html()
+
+			description := strings.Split(strings.Split(html, "</h4>")[1], "<table>")[0]
+			p.Description = description
+
+			selection.Find("table > tbody").Each(func(i int, selection *goquery.Selection) {
+				selection.Find("tr").Each(func(i int, selection *goquery.Selection) {
+					prop := selection.Find("th").First().Text()
+					value := selection.Find("td").First().Text()
+
+					// we remove the ":" at the end of the string
+					prop = prop[:len(prop)-1]
+
+					switch prop {
+					case "Type":
+						p.Type = value
+					case "Default":
+						p.Default = value
+					case "Valid Values":
+						p.ValidValues = value
+					case "Importance":
+						p.Importance = value
+					case "Update Mode":
+						p.DynamicUpdateMode = value
+					case "Server Default Property":
+						p.ServerDefaultProperty = value
+					}
+				})
+			})
+			properties = append(properties, p)
+		})
+	})
+	c.OnError(func(response *colly.Response, e error) {
+		if response.StatusCode == 404 {
+			panic(errors.Errorf("Not found"))
+		}
+		panic(errors.Wrapf(e, "colly error (status:%d)", response.StatusCode))
+	})
+	err := c.Visit("https://kafka.apache.org/" + versionCode + "/documentation.html")
+	if err != nil {
+		panic(err)
+	}
+
+	return properties
+}
+
+func getDocBefore25(versionCode string) []property {
 	var properties []property
 	c := colly.NewCollector()
 
