@@ -27,17 +27,21 @@ type property struct {
 func main() {
 
 	kafkaVersion := map[string]string{
-		"0101": "0.10.1.X",
-		"0102": "0.10.2.X",
-		"0110": "0.11.0.X",
-		"10":   "1.0.X",
-		"11":   "1.1.X",
-		"20":   "2.0.X",
-		"21":   "2.1.X",
-		"22":   "2.2.X",
-		"23":   "2.3.X",
-		"24":   "2.4.X",
-		"25":   "2.5.X",
+		"0101": "0.10.1",
+		"0102": "0.10.2",
+		"0110": "0.11.0",
+		"10":   "1.0",
+		"11":   "1.1",
+		"20":   "2.0",
+		"21":   "2.1",
+		"22":   "2.2",
+		"23":   "2.3",
+		"24":   "2.4",
+		"25":   "2.5",
+		"26":   "2.6",
+		"27":   "2.7",
+		"28":   "2.8",
+		"30":   "3.0",
 	}
 
 	for k, versionLabel := range kafkaVersion {
@@ -85,18 +89,22 @@ func getDoc(versionCode string) []property {
 
 			if selection.Nodes[0].Data == "a" {
 				categoryLinkAttr, _ := selection.Attr("id")
+				if categoryLinkAttr == "" {
+					return
+				}
 				currentCategory = strings.Replace(categoryLinkAttr, "configs", "", 1)
 				return
 			}
 
 			p.Category = currentCategory
 
-			propKey := selection.Find("h4 > a").First()
+			// property name is the last <a> for v2.5
+			propKey := selection.Find("h4 > a").Last()
 			p.Name = propKey.Text()
 
 			html, _ := selection.Html()
 
-			description := strings.Split(strings.Split(html, "</h4>")[1], "<table>")[0]
+			description := strings.Split(strings.Split(html, "</h4>")[1], "<table")[0]
 			p.Description = description
 
 			selection.Find("table > tbody").Each(func(i int, selection *goquery.Selection) {
