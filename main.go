@@ -43,6 +43,7 @@ func main() {
 		"28":   "2.8",
 		"30":   "3.0",
 		"31":   "3.1",
+		"32":   "3.2",
 	}
 
 	for k, versionLabel := range kafkaVersion {
