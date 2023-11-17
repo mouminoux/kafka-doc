@@ -86,8 +86,22 @@
         </div>
         <div class="field is-horizontal">
             <div class="field-label is-normal">
+                <label class="label">Highlight results</label>
+            </div>
+            <div class="field-body">
+                <div class="buttons has-addons">
+                    <span class="button" v-for="mode of highlights"
+                          v-bind:class="{ 'is-primary': filters.highlight === mode }"
+                          v-on:click="filters.highlight = mode;"
+                          v-text="mode"></span>
+                </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
                 <label class="label">Category</label>
             </div>
+
             <div class="field-body">
                 <div class="buttons has-addons">
                     <span class="button" v-for="category of filters.categories"
@@ -153,6 +167,8 @@
     </div>
 </footer>
 <script>
+    const highlightOn = 'On';
+    const highlightOff = 'Off';
     var propertiesVue = new Vue({
         el: '#properties',
         mounted() {
@@ -191,6 +207,10 @@
                 '3.3',
                 '3.4',
             ],
+            highlights: [
+                highlightOn,
+                highlightOff,
+            ],
             filters: {
                 version: '3.4',
                 search: '',
@@ -202,7 +222,8 @@
                     {name: 'connect', active: true},
                     {name: 'streams', active: true},
                     {name: 'adminclient', active: true},
-                ]
+                ],
+                highlight : highlightOn
             },
         },
         methods: {
@@ -212,7 +233,7 @@
                 });
             },
             highlight: function (value) {
-                if (this.filters.search.length > 2) {
+                if (this.filters.search.length > 2 && this.filters.highlight === highlightOn) {
                     return value.replace(new RegExp(this.filters.search, "gi"), match => {
                         return '<span class="tag is-primary is-medium">' + match + '</span>';
                     });
