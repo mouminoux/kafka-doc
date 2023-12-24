@@ -38,6 +38,10 @@
             height: initial;
             padding: initial;
         }
+
+        .section-without-bottom-padding {
+            padding-bottom: 0rem;
+        }
     </style>
 </head>
 <body>
@@ -57,10 +61,10 @@
 </section>
 
 <div id="properties" class="container is-fluid">
-    <section class="section">
+    <section class="section section-without-bottom-padding">
         <div class="field is-horizontal">
             <div class="field-label is-normal">
-                <label class="label">Version</label>
+                <label class="label">Kafka version</label>
             </div>
             <div class="field-body">
                 <div class="buttons has-addons">
@@ -69,31 +73,6 @@
                           v-on:click="filters.version = version; fetchData()"
                           v-text="version"
                     />
-                </div>
-            </div>
-        </div>
-        <div class="field is-horizontal">
-            <div class="field-label is-normal">
-                <label class="label">Search</label>
-            </div>
-            <div class="field-body">
-                <div class="field is-expanded">
-                    <div class="control">
-                        <input class="input" type="text" v-model="filters.search"/>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="field is-horizontal">
-            <div class="field-label is-normal">
-                <label class="label">Highlight results</label>
-            </div>
-            <div class="field-body">
-                <div class="buttons has-addons">
-                    <span class="button" v-for="mode of highlights"
-                          v-bind:class="{ 'is-primary': filters.highlight === mode }"
-                          v-on:click="filters.highlight = mode;"
-                          v-text="mode"></span>
                 </div>
             </div>
         </div>
@@ -112,8 +91,47 @@
                 </div>
             </div>
         </div>
-    </section>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Search</label>
+            </div>
+            <div class="field-body">
+                <div class="field is-expanded">
+                    <div class="control">
+                        <input class="input" type="text" v-model="filters.search"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">In</label>
+            </div>
 
+            <div class="field-body">
+                <div class="buttons has-addons">
+                    <span class="button" v-for="configBlock of filters.configBlocks"
+                          v-bind:class="{ 'is-primary': configBlock.active }"
+                          v-on:click="configBlock.active = !configBlock.active"
+                          v-text="configBlockDescriptionFromName(configBlock.name).displayName"
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="field is-horizontal">
+            <div class="field-label is-normal">
+                <label class="label">Highlight results</label>
+            </div>
+            <div class="field-body">
+                <div class="buttons has-addons">
+                    <span class="button" v-for="mode of highlights"
+                          v-bind:class="{ 'is-primary': filters.highlight === mode }"
+                          v-on:click="filters.highlight = mode;"
+                          v-text="mode"></span>
+                </div>
+            </div>
+        </div>
+    </section>
     <section class="section">
         <table class="table is-bordered is-striped is-narrow is-hoverable is-fullwidth">
             <colgroup>
@@ -143,16 +161,16 @@
             <tbody>
             <tr v-for="property of filteredProperties">
                 <td v-text="categoryName(property.Category)"/>
-                <td v-html="highlight(property.Name)"/>
-                <td style="word-break: break-word" v-html="highlight(property.Description)"/>
+                <td v-html="highlight(property, 'Name')"/>
+                <td style="word-break: break-word" v-html="highlight(property, 'Description')"/>
                 <td>
-                    <code v-html="highlight(property.Type)"/>
+                    <code v-html="highlight(property,'Type')"/>
                 </td>
-                <td v-html="highlight(property.Default)"/>
-                <td v-html="highlight(property.ValidValues)"/>
-                <td v-html="highlight(property.Importance)"/>
-                <td v-html="highlight(property.DynamicUpdateMode)"/>
-                <td v-html="highlight(property.ServerDefaultProperty)"/>
+                <td v-html="highlight(property, 'Default')"/>
+                <td v-html="highlight(property, 'ValidValues')"/>
+                <td v-html="highlight(property, 'Importance')"/>
+                <td v-html="highlight(property, 'DynamicUpdateMode')"/>
+                <td v-html="highlight(property, 'ServerDefaultProperty')"/>
             </tr>
             </tbody>
         </table>
@@ -213,6 +231,16 @@
                 highlightOn,
                 highlightOff,
             ],
+            configBlockNames: [
+                {name: 'name', displayName: 'Name', docName: 'Name'},
+                {name: 'description', displayName: 'Description', docName: 'Description'},
+                {name: 'type', displayName: 'Type', docName: 'Type'},
+                {name: 'default', displayName: 'Default', docName: 'Default'},
+                {name: 'validvalues', displayName: 'Valid Values', docName: 'ValidValues'},
+                {name: 'importance', displayName: 'Importance', docName: 'Importance'},
+                {name: 'dynamicupdatemode', displayName: 'Dynamic Update Mode', docName: 'DynamicUpdateMode'},
+                {name: 'serverdefaultproperty', displayName: 'Server Default Property', docName: 'ServerDefaultProperty'}
+            ],
             filters: {
                 version: '3.6',
                 search: '',
@@ -225,6 +253,16 @@
                     {name: 'streams', active: true},
                     {name: 'adminclient', active: true},
                 ],
+                configBlocks: [
+                    {name: 'name', active: true},
+                    {name: 'description', active: true},
+                    {name: 'type', active: true},
+                    {name: 'default', active: true},
+                    {name: 'validvalues', active: true},
+                    {name: 'importance', active: true},
+                    {name: 'dynamicupdatemode', active: true},
+                    {name: 'serverdefaultproperty', active: true}
+                ],
                 highlight : highlightOn
             },
         },
@@ -234,19 +272,43 @@
                     this.properties = response.data;
                 });
             },
-            highlight: function (value) {
-                if (this.filters.search.length > 2 && this.filters.highlight === highlightOn) {
-                    return value.replace(new RegExp(this.filters.search, "gi"), match => {
-                        return '<span class="tag is-primary is-medium">' + match + '</span>';
-                    });
-                } else {
-                    return value;
+            highlight: function (row, field) {
+                value = row[field];
+                if(this.filters.highlight === highlightOn && this.filters.search.length > 2) {
+                    let configBlocks = this.filters.configBlocks;
+                    let desc = this.configBlockDescriptionFromDocName(field);
+
+                    for (var i = 0; i < configBlocks.length; i++) {
+                        let block = configBlocks[i];
+                        if (block.name === desc.name) {
+                            if (block.active) {
+                                return value.replace(new RegExp(this.filters.search, "gi"), match => {
+                                    return '<span class="tag is-primary is-medium">' + match + '</span>';
+                                });
+                            }
+                        }
+                    }
                 }
+                return value;
             },
             categoryName: function (value) {
                 for (var i = 0; i < this.categoriesName.length; i++) {
                     if (this.categoriesName[i].name === value) {
                         return this.categoriesName[i].displayName;
+                    }
+                }
+            },
+            configBlockDescriptionFromName: function (name) {
+                for (var i = 0; i < this.configBlockNames.length; i++) {
+                    if (this.configBlockNames[i].name === name) {
+                        return this.configBlockNames[i];
+                    }
+                }
+            },
+            configBlockDescriptionFromDocName: function (docName) {
+                for (var i = 0; i < this.configBlockNames.length; i++) {
+                    if (this.configBlockNames[i].docName === docName) {
+                        return this.configBlockNames[i];
                     }
                 }
             },
@@ -267,6 +329,8 @@
                 var search = this.filters.search;
                 var properties = this.properties;
                 var categories = this.filters.categories;
+                var configBlocks = this.filters.configBlocks;
+                var descriptionFromName = this.configBlockDescriptionFromName;
 
                 properties = properties.filter(function (row) {
                     for (var i = 0; i < categories.length; i++) {
@@ -277,9 +341,15 @@
                 });
 
                 properties = properties.filter(function (row) {
-                    return Object.keys(row).some(function (key) {
-                        return String(row[key]).toLowerCase().indexOf(search.toLowerCase()) > -1;
-                    });
+                    for (var i = 0; i < configBlocks.length; i++) {
+                        let block = configBlocks[i];
+                        let active = block.active;
+                        let rowElementOrEmpty = row[descriptionFromName(block.name).docName];
+                        if (active && rowElementOrEmpty && rowElementOrEmpty.toLowerCase().indexOf(search.toLowerCase()) > -1) {
+                            return true;
+                        }
+                    }
+                    return false;
                 });
 
                 return properties;
