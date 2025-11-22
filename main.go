@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/gocolly/colly"
-	"github.com/pkg/errors"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+	"github.com/gocolly/colly"
+	"github.com/pkg/errors"
 )
 
 type property struct {
@@ -51,6 +52,8 @@ func main() {
 		"37":   "3.7",
 		"38":   "3.8",
 		"39":   "3.9",
+		"40":   "4.0",
+		"41":   "4.1",
 	}
 
 	for k, versionLabel := range kafkaVersion {
